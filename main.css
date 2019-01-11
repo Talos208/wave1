@@ -1,0 +1,297 @@
+@font-face {
+    font-family: "dseg";
+    font-weight: normal;
+    src: local('dseg'),
+        url("font/DSEG7ClassicMini-Italic.woff2") format('woff2');
+}
+
+@font-face {
+    font-family: "dseg";
+    font-weight: 300;
+    src: local('dseg'),
+    url("font/DSEG7ClassicMini-LightItalic.woff2") format('woff2');
+}
+
+@font-face {
+    font-family: "dseg";
+    font-weight: bold;
+    src: local('dseg'),
+    url("font/DSEG7ClassicMini-BoldItalic.woff2") format('woff2');
+}
+
+body {
+    background: black;
+    font-family: "dseg";
+    font-weight: lighter;
+}
+
+label {
+    color: white;
+}
+
+legend {
+    color: white;
+    display: contents;
+}
+
+fieldset {
+    border: none;
+    width: 100%;
+}
+
+div#prepare {
+    z-index: 2;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: #000044;
+    padding: 40%;
+}
+
+div#prepare:disabled {
+    display: none;
+}
+
+#prepare button {
+    -webkit-appearance: none;
+    width: 80px;
+    height: 20px;
+    border: solid 1px deepskyblue;
+    background-color: #000044;
+    color: lightgray;
+}
+
+#prepare button:hover {
+    -webkit-appearance: none;
+    border: solid 1px skyblue;
+    background-color: #008;
+    color: white;
+}
+
+.keyboard {
+    display: block;
+    border: 1px inset aquamarine;
+    background: #003;
+    width: 476px;
+    height: 170px;
+    padding-left: 20px;
+    padding-top: 5px;
+    padding-right: 20px;
+}
+
+.keyboard div#blackkey {
+    display: inline-block;
+    position: relative;
+    left: 24px
+}
+
+.keyboard div#whitekey {
+    display: inline-block;
+    position: relative;
+    left: 0px
+}
+
+div.key {
+    display: inline-block;
+    border: solid 1px azure;
+    background: #006;
+    width: 40px;
+    height: 80px;
+}
+
+div.key.disabled {
+    background: #004;
+    border: solid 1px royalblue;
+}
+
+div.key.noteon {
+    background: red;
+}
+
+meter {
+    -webkit-appearance:meter;
+    background: #000033 none;
+    border: solid 1px aquamarine;
+    width: 100px;
+    height: 1em;
+}
+
+meter::-webkit-meter-inner-element {
+    background: #000033 none;
+    border: solid 1px aquamarine;
+}
+
+meter::-webkit-meter-bar {
+    background: #000033 none;
+    border: solid 1px aquamarine;
+}
+
+meter::-webkit-meter-optimum-value {
+    background: #00a;
+    border-right: solid 1px #bd6
+}
+
+.psudo-drop {
+    display: inline-block;
+    vertical-align: bottom;
+    overflow: hidden;
+    width: 60px;
+    height: 20px;
+    border: solid 1px royalblue;
+}
+
+.psudo-drop.selecting {
+    display: inline-block;
+    overflow: visible;
+    height: 20px;
+}
+
+.psudo-drop ul {
+    display: flow;
+    position: relative;
+    background: #003;
+    outline: solid 1px royalblue;
+    padding-left: 0px;
+    margin: 0px;
+    width: 60px
+}
+
+.psudo-drop ul li {
+    z-index: 1;
+    display: block;
+    height: 20px;
+}
+
+.psudo-drop button {
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+}
+
+.psudo-drop button:hover {
+    -webkit-appearance: none;
+    background: #00a;
+    border: none;
+}
+
+#matrix {
+    width: 600px;
+    padding: 20px;
+    font-size: 14px;
+}
+
+#matrix table {
+    border-collapse: collapse;
+    border-spacing: 0px;
+    padding: 0px;
+    color: white;
+}
+
+
+/*#matrix table tr {*/
+    /*height: 20px;*/
+    /*background: #000044;*/
+    /*border: solid 1px royalblue;*/
+/*}*/
+
+#matrix th {
+    /*height: 20px;*/
+    background: #008;
+    border: inset 1px royalblue;
+}
+
+#matrix table .scale {
+    width: 50px;
+}
+
+#matrix table tr {
+    height: 20px;
+}
+#matrix table tbody td {
+    width: 20px;
+    border: inset 1px royalblue;
+}
+/*#matrix table tbody td:first-child {*/
+    /*text-align: right;*/
+/*}*/
+
+#matrix colgroup.scale {
+    /*border-left: inset 1px yellow;*/
+    text-align: right;
+    border: outset 1px royalblue;
+}
+
+ #matrix colgroup.mesure col{
+    border: inset 1px royalblue;
+    width: 20px;
+}
+
+#matrix tbody td.on {
+    background-color: cornflowerblue;
+}
+
+#matrix tbody col.current ~ td.on {
+    background-color: #0ff;
+}
+
+#matrix table colgroup.mesure col.current {
+    background-color: #ff8 !important;
+}
+
+#matrix table col.measure1 {
+    background-color: #000066;
+}
+
+#matrix colgroup.mesure col.measure2:first-child {
+    border-left: solid 1px yellow;
+}
+
+#matrix colgroup.mesure col.measure3 {
+    background-color: #000066;
+}
+
+#matrix table col.measure4:first-of-type {
+    border-left: inset 1px aquamarine;
+}
+
+#play label.play-check input[type="checkbox"] {
+    -webkit-appearance: none;
+}
+
+#play label.play-check {
+    border: solid 1px royalblue;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    text-align: center;
+    font-size: 20px;
+    display: inline-block;
+}
+
+#play label.play-check>input[type="checkbox"]:focus {
+    outline: 0;
+}
+
+#play label.play-check>input[type="checkbox"]:after {
+    font-family: "Font Awesome 5 Free"; font-weight: 400;
+    content: "";
+    color: #0f0;
+}
+
+#play label.play-check>input[type="checkbox"]:checked:after {
+    vertical-align: middle;
+    font-family: "Font Awesome 5 Free"; font-weight: 400;
+    content: "";
+    color: #f00;
+}
+
+#play input#play-tempo {
+    font-family: dseg;
+    color: red;
+    background-color: #000033;
+    border: solid 1px royalblue;
+    font-size: 20px;
+}
