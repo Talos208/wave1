@@ -469,14 +469,54 @@ document.addEventListener('DOMContentLoaded',function() {
 
         if (checked) {
             var note_index = 0
+            var last_changed_time = start_time
             start_time = context.currentTime
             playHandle = setInterval(function () {
+                // 音の予約
+                // 過去の最終note_changeから、現在時+interval*2までのnote_changeを予約
+                // 時間範囲の計算
+                let now = context.currentTime
+                let range_end = now + interval / 500    // interval(mSec) * 2 / 1000
+
+                // 時間範囲内のnote_changeを列挙
+                // TODO start_timeから計算するとテンポ変更時に大変なので、せめて小節先頭時刻とかにする
+                let s_off = Math.trunc((last_changed_time - start_time) / note_tick)
+                let e_off = Math.trunc((range_end - start_time) / note_tick)
+                while (s_off < e_off) {
+                    let n = notes[s_off % 16]
+                    if (n) {
+                        // note_changeの予約
+                        let note = [
+                            null,
+                            "b",
+                            "a#",
+                            "a",
+                            "g#",
+                            "g",
+                            "f#",
+                            "f",
+                            "e",
+                            "d#",
+                            "d",
+                            "c#",
+                            "c",
+                        ][n]
+
+                        let at = s_off * note_tick + start_time;
+                        console.log(note, at)
+                        let freq = freqTable[note];
+                        noteOnAt(freq, octave, at)
+                        noteOffAt(at + note_tick)
+                    }
+                    s_off += 1
+                }
+                last_changed_time = range_end
+
                 let cgs = '#matrix colgroup.mesure col.note'+ note_index
                 let cg = document.querySelector(cgs)
                 if (cg) {
                     cg.classList.remove('current')
                 }
-                let now = context.currentTime
                 let v0 = (now - start_time) / note_tick
                 note_index = (Math.trunc(v0) % 16) + 1
                 document.querySelector('#matrix colgroup.mesure col.note'+ note_index).classList.add('current')
@@ -488,6 +528,7 @@ document.addEventListener('DOMContentLoaded',function() {
                     v.classList.remove('current')
                 })
                 note_index = 0
+                noteOff()
             }
         }
     })
