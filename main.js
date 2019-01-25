@@ -119,7 +119,7 @@ var subOscWeight = 0
 
 function setDetune(at) {
     let sf = Math.pow(2, detune / 12.0) * currentFreq
-    console.log("Sub osc " + sf)
+    console.debug("Sub osc " + sf)
     subOsc.frequency.setValueAtTime(sf, at)
     subOscGain.gain.setValueAtTime(subOscWeight, at)
 }
@@ -128,8 +128,9 @@ function noteOnAt(freq, oct, at = context.currentTime) {
     vf.gain.cancelAndHoldAtTime(at)
     vf.gain.setValueAtTime(.0, at)
 
+    console.debug(freq, oct)
     currentFreq = freq * Math.pow(2, oct - 4)
-    console.log("Note on " + currentFreq)
+    console.debug("Note on " + currentFreq)
 
     source.frequency.setValueAtTime(currentFreq, at)
     setDetune(at)
@@ -191,7 +192,7 @@ function shortcutKeyProc(e) {
         case 'e':
             if (cutoff > 0.1) {
                 cutoff -= 0.1
-                console.log(cutoff)
+                console.debug(cutoff)
                 setFilter(now)
                 document.getElementById('synth-cutoff').value = cutoff
             }
@@ -199,7 +200,7 @@ function shortcutKeyProc(e) {
         case '3':
             if (cutoff < 4.0) {
                 cutoff += 0.1
-                console.log(cutoff)
+                console.debug(cutoff)
                 setFilter(now)
                 document.getElementById('synth-cutoff').value = cutoff
             }
@@ -211,7 +212,7 @@ function shortcutKeyProc(e) {
         case 'r':
             if (peak > 3) {
                 peak -= 3
-                console.log(peak)
+                console.debug(peak)
                 setPeak()
                 document.getElementById('synth-peak').value = peak
             }
@@ -219,7 +220,7 @@ function shortcutKeyProc(e) {
         case '4':
             if (peak < 36) {
                 peak += 3
-                console.log(peak)
+                console.debug(peak)
                 setPeak()
                 document.getElementById('synth-peak').value = peak
             }
@@ -227,7 +228,7 @@ function shortcutKeyProc(e) {
     }
 
     // piano keys
-    var o = octave
+    var o = parseInt(document.getElementById('play-octave').value)
     var n = ''
     switch (e.key) {
         case 'z':
@@ -288,12 +289,12 @@ function shortcutKeyProc(e) {
             break
 
         default:
-            console.log("Other key:" + e.key)
+            console.debug("Other key:" + e.key)
             return
     }
     f = freqTable[n]
     noteOn(f, o)
-    document.getElementById(n + o).classList.add('noteon')
+    document.querySelector('.key.note-' + n + '.octave-' + o).classList.add('noteon')
 }
 
 function keyup(e) {
@@ -301,7 +302,6 @@ function keyup(e) {
 }
 
 function noteOffAt(at) {
-    // console.log("Note off")
     vf.gain.linearRampToValueAtTime(0.0, at + .6) // release
     var ks = document.getElementsByClassName('noteon')
     for (let i of ks) {
@@ -316,17 +316,28 @@ window.addEventListener("keydown", shortcutKeyProc, false)
 window.addEventListener("keyup", keyup, false)
 
 function clickKeyProc(e) {
-    if (e.target.classList.contains("key")) {
-        let os = e.target.id.substr(-1)
-        let ns = e.target.id.replace(os, "")
+    let cl = e.target.classList;
+    if (cl.contains("key")) {
+        var ns = null
+        var o = 0
+        cl.forEach(function (v,k, _) {
+            if (v.startsWith('note-')) {
+                console.debug(v)
+                ns = v.substr(5)
+            } else if (v.startsWith('octave-')) {
+                console.debug(v)
+                o = parseInt(v.substr(7)) - 4
+            }
+        })
+        let os = parseInt(document.getElementById('play-octave').value) + o
 
-        noteOn(freqTable[ns], 0 + os)
-        e.target.classList.add("noteon")
+        noteOn(freqTable[ns], os)
+        cl.add("noteon")
     }
 }
 
 function waveSelectChanged(e) {
-    console.log(e)
+    console.debug(e)
 
     let w = e.target.getAttribute('value')
     waveform = w
@@ -364,7 +375,7 @@ function meterControl(proc, e) {
             }
             // fall through
         case "mousedown":
-            console.log(e)
+            console.debug(e)
             tgt = e.target
             max = Number(tgt.max)
             min = Number(tgt.min)
@@ -374,8 +385,6 @@ function meterControl(proc, e) {
         default:
             return
     }
-    // console.log(tgt)
-    // console.log(v)
     tgt.value = v
     proc.call(null, v)
 }
@@ -394,11 +403,11 @@ document.addEventListener('DOMContentLoaded',function() {
     let prepBtn = document.querySelector('#prepare')
     let prepProp =     function () {
         context.resume().then(function () {
-            console.log('Context resumed')
+            console.debug('Context resumed')
             prepBtn.removeEventListener('click', prepProp)
             prepBtn.style.display = 'none'
         }).catch(function () {
-            console.log('Fail to resume context')
+            console.warn('Fail to resume context')
         })
     }
     prepBtn.addEventListener('click', prepProp)
@@ -408,12 +417,12 @@ document.addEventListener('DOMContentLoaded',function() {
             value.addEventListener("change", waveSelectChanged)
         }
     )
-    let kbElem = document.querySelector("article.keyboard")
+    let kbElem = document.querySelector("#keyboard")
     kbElem.addEventListener("mousedown", clickKeyProc, false)
     kbElem.addEventListener("mouseup", noteOff, false)
 
     addMeterEventListener('synth-detune',function (v) {
-        console.log(v)
+        console.debug(v)
         detune = v
         setDetune(context.currentTime)
     })
@@ -469,14 +478,14 @@ document.addEventListener('DOMContentLoaded',function() {
 
         if (checked) {
             var note_index = 0
-            var last_changed_time = start_time
             start_time = context.currentTime
+            var last_changed_time = start_time
             playHandle = setInterval(function () {
                 // 音の予約
                 // 過去の最終note_changeから、現在時+interval*2までのnote_changeを予約
                 // 時間範囲の計算
                 let now = context.currentTime
-                let range_end = now + interval / 500    // interval(mSec) * 2 / 1000
+                let range_end = now + interval / 200    // interval(mSec) * 5 / 1000
 
                 // 時間範囲内のnote_changeを列挙
                 // TODO start_timeから計算するとテンポ変更時に大変なので、せめて小節先頭時刻とかにする
@@ -486,40 +495,43 @@ document.addEventListener('DOMContentLoaded',function() {
                     let n = notes[s_off % 16]
                     if (n) {
                         // note_changeの予約
+                        let oct = n >> 4
                         let note = [
-                            null,
-                            "b",
-                            "a#",
-                            "a",
-                            "g#",
-                            "g",
-                            "f#",
-                            "f",
-                            "e",
-                            "d#",
-                            "d",
-                            "c#",
                             "c",
-                        ][n]
+                            "c#",
+                            "d",
+                            "d#",
+                            "e",
+                            "f",
+                            "f#",
+                            "g",
+                            "g#",
+                            "a",
+                            "a#",
+                            "b",
+                        ][n & 0xf]
 
                         let at = s_off * note_tick + start_time;
-                        console.log(note, at)
+                        console.debug(note, at)
                         let freq = freqTable[note];
-                        noteOnAt(freq, octave, at)
+                        noteOnAt(freq, oct, at)
                         noteOffAt(at + note_tick)
                     }
                     s_off += 1
                 }
                 last_changed_time = range_end
 
-                let cgs = '#matrix colgroup.mesure col.note'+ note_index
+                let cgs = '#matrix colgroup.measure col.note'+ note_index
                 let cg = document.querySelector(cgs)
                 if (cg) {
                     cg.classList.remove('current')
                 }
                 let v0 = (now - start_time) / note_tick
                 note_index = (Math.trunc(v0) % 16) + 1
-                document.querySelector('#matrix colgroup.mesure col.note'+ note_index).classList.add('current')
+                let cgs2 = document.querySelector('#matrix colgroup.measure col.note'+ note_index);
+                if (cgs2) {
+                    cgs2.classList.add('current')
+                }
             }, interval)
         } else {
             if (playHandle) {
@@ -536,9 +548,13 @@ document.addEventListener('DOMContentLoaded',function() {
     let notes = []
     document.querySelector('#matrix tbody').addEventListener('click', function (e) {
         let step = e.target.cellIndex - 1
-        let note = e.target.closest('tr').rowIndex
+        let nix = e.target.closest('tr').dataset['note']
+
+        let note = parseInt(nix, 16)
+        console.log(note)
+
         if (notes[step]) {
-            let qs = '#matrix tbody tr td:nth-child(' + (step + 2) + ')'
+            let qs = '#matrix tbody tr td:nth-child(' + (step + 2) + ').on'
             document.querySelectorAll(qs).forEach(function (v) {
                 v.classList.remove('on')
             })
@@ -551,11 +567,7 @@ document.addEventListener('DOMContentLoaded',function() {
             e.target.classList.add('on')
         }
 
-        // row.forEach(function (v, ix) {
-        //     console.log(v)
-        // })
-
-        console.log(e.target)
+        console.debug(e.target)
     })
 
 

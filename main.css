@@ -71,7 +71,7 @@ div#prepare:disabled {
     color: white;
 }
 
-.keyboard {
+#keyboard {
     display: block;
     border: 1px inset aquamarine;
     background: #003;
@@ -82,13 +82,13 @@ div#prepare:disabled {
     padding-right: 20px;
 }
 
-.keyboard div#blackkey {
+#keyboard div#blackkey {
     display: inline-block;
     position: relative;
     left: 24px
 }
 
-.keyboard div#whitekey {
+#keyboard div#whitekey {
     display: inline-block;
     position: relative;
     left: 0px
@@ -177,8 +177,21 @@ meter::-webkit-meter-optimum-value {
     border: none;
 }
 
+#control {
+    display: flex;
+}
+
+#control input {
+    font-family: dseg;
+    color: red;
+    background-color: #000033;
+    border: solid 1px royalblue;
+    font-size: 20px;
+}
+
+
 #matrix {
-    width: 600px;
+    /*width: 600px;*/
     padding: 20px;
     font-size: 14px;
 }
@@ -190,33 +203,44 @@ meter::-webkit-meter-optimum-value {
     color: white;
 }
 
-
-/*#matrix table tr {*/
-    /*height: 20px;*/
-    /*background: #000044;*/
-    /*border: solid 1px royalblue;*/
-/*}*/
-
-#matrix th {
-    /*height: 20px;*/
-    background: #008;
-    border: inset 1px royalblue;
-}
-
-#matrix table .scale {
-    width: 50px;
+#matrix thead th:first-child {
+    width: 70px;
 }
 
 #matrix table tr {
     height: 20px;
 }
-#matrix table tbody td {
+
+#matrix thead {
+    display: block;
+    width: 480px;
+}
+
+#matrix thead th {
+    table-layout: fixed;
     width: 20px;
+    background: #008;
     border: inset 1px royalblue;
 }
-/*#matrix table tbody td:first-child {*/
-    /*text-align: right;*/
-/*}*/
+
+#matrix tbody {
+    display: block;
+    overflow-y: scroll;
+    height: 240px;
+    width: 480px;
+}
+
+#matrix table tbody td {
+    table-layout: fixed;
+    width: 20px;
+    border: solid 1px royalblue;
+}
+
+#matrix table tbody td.tone {
+    width: 70px;
+    text-align: right;
+    /*display: table-cell;*/
+}
 
 #matrix colgroup.scale {
     /*border-left: inset 1px yellow;*/
@@ -224,7 +248,7 @@ meter::-webkit-meter-optimum-value {
     border: outset 1px royalblue;
 }
 
- #matrix colgroup.mesure col{
+#matrix colgroup.measure col{
     border: inset 1px royalblue;
     width: 20px;
 }
@@ -237,7 +261,7 @@ meter::-webkit-meter-optimum-value {
     background-color: #0ff;
 }
 
-#matrix table colgroup.mesure col.current {
+#matrix table colgroup.measure col.current {
     background-color: #ff8 !important;
 }
 
@@ -288,10 +312,7 @@ meter::-webkit-meter-optimum-value {
     color: #f00;
 }
 
-#play input#play-tempo {
-    font-family: dseg;
-    color: red;
-    background-color: #000033;
-    border: solid 1px royalblue;
-    font-size: 20px;
+#play {
+    display: flex;
+    flex-direction: column;
 }
