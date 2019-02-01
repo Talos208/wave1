@@ -1,10 +1,112 @@
-var context
-var source
-var vf
-var filter
-var masterVolume
+// var context
 
-var octave = 4
+let SynthChannel
+SynthChannel = class {
+    constructor() {
+        this.waveform = 'sawtooth'
+        this.currentFreq = 0.0
+        this.cutoff = 1.5;
+        this.peak = 18
+
+        this.detune = 4
+        this.subOscWeight = 0
+
+        this.source = null
+        this.subOsc = null
+        this.som = null
+        this.vf = null
+        this.filter = null
+    }
+
+    setFilter(at) {
+        this.filter.frequency.setValueAtTime(this.currentFreq * this.cutoff, at)
+    }
+
+    setPeak(at = SynthChannel.context.currentTime) {
+        this.filter.Q.setValueAtTime(this.peak, at)
+    }
+
+    setWaveform() {
+        let tmp = this.masterVolume.gain.value
+        this.masterVolume.gain.setValueAtTime(0, SynthChannel.context.currentTime + .1)
+        this.source.type = this.waveform
+        this.masterVolume.gain.setValueAtTime(tmp, SynthChannel.context.currentTime + .1)
+    }
+
+    setDetune(at) {
+      let sf = Math.pow(2, this.detune / 12.0) * this.currentFreq
+      console.debug("Sub osc " + sf)
+      this.subOsc.frequency.setValueAtTime(sf, at)
+      this.subOscGain.gain.setValueAtTime(this.subOscWeight, at)
+    }
+
+    noteOn(freq, oct, at = SynthChannel.context.currentTime) {
+      this.vf.gain.cancelAndHoldAtTime(at)
+      this.vf.gain.setValueAtTime(.0, at)
+
+      console.debug(freq, oct)
+      this.currentFreq = freq * Math.pow(2, oct - 4)
+      console.debug("Note on " + this.currentFreq)
+
+      this.source.frequency.setValueAtTime(this.currentFreq, at)
+      this.setDetune(at)
+      this.setFilter(at)
+
+      this.vf.gain.linearRampToValueAtTime(1.0, at + .01) // Attack
+      this.vf.gain.linearRampToValueAtTime(.8, at + .5) // decay
+      this.vf.gain.linearRampToValueAtTime(0.0, at + 3) // sustain
+    }
+
+    noteOff(at = SynthChannel.context.currentTime) {
+      this.vf.gain.linearRampToValueAtTime(0.0, at + .6) // release
+
+      // TODO ここにviewが混ざってしまってる
+      var ks = document.getElementsByClassName('noteon')
+      for (let i of ks) {
+        i.classList.remove(["noteon"])
+      }
+    }
+
+    start() {
+        this.source = SynthChannel.context.createOscillator()
+        let now = SynthChannel.context.currentTime;
+        this.source.frequency.setValueAtTime(440, now)
+
+        this.subOsc = SynthChannel.context.createOscillator()
+        this.subOsc.type = 'square'
+        this.subOscGain = SynthChannel.context.createGain()
+
+        this.som = SynthChannel.context.createChannelMerger(2)
+
+        this.vf = SynthChannel.context.createGain()
+        this.vf.gain.setValueAtTime(0, now)
+
+        this.filter = SynthChannel.context.createBiquadFilter()
+        this.filter.type = 'lowpass'
+        this.filter.frequency.setValueAtTime(330, now)
+        // filter.frequency.setValueAtTime(0, context.currentTime)
+        this.setPeak()
+
+        this.masterVolume = SynthChannel.context.createGain()
+        this.masterVolume.gain.setValueAtTime(0.6, now)
+
+        this.source.connect(this.som)
+        this.subOsc.connect(this.subOscGain)
+        this.subOscGain.connect(this.som)
+
+        this.som.connect(this.vf)
+        this.vf.connect(this.filter)
+        this.filter.connect(this.masterVolume)
+        this.masterVolume.connect(SynthChannel.context.destination)
+
+        this.setWaveform()
+
+        this.source.start()
+        this.subOsc.start()
+    }
+
+};
+
 var freqTable = {
     "c": 261.626,    // C
     "c#": 277.183,
@@ -21,129 +123,17 @@ var freqTable = {
 }
 
 window.addEventListener('load', init, false)
+var currentCh = null;
 
 function init() {
     try {
         window.AudioContext = window.AudioContext||window.webkitAudioContext;
-        context = new AudioContext();
-        prep()
-
-        let now = context.currentTime
-
-        // let bpm = 125
-        // let tick = 15.0 / bpm
-        //
-        // noteOnAt(freqTable['e'], 2, now)
-        // noteOffAt(now + tick * 8)
-        // noteOnAt(freqTable['e'], 2, now + tick * 8)
-        // noteOffAt(now + tick * 11)
-        // noteOnAt(freqTable['d'], 2, now + tick * 12)
-        // noteOffAt(now + tick * 15)
-        //
-        // noteOnAt(freqTable['e'], 2, now + tick * 16)
-        // noteOffAt(now + tick * 24)
-        // noteOnAt(freqTable['e'], 2, now + tick * 24)
-        // noteOffAt(now + tick * 27)
-        // noteOnAt(freqTable['g'], 2, now + tick * 28)
-        // noteOffAt(now + tick * 31)
-
+        SynthChannel.context = new AudioContext();
+        currentCh = new SynthChannel()
     }
     catch (e) {
-        alert(e)
+        console.error(e)
     }
-}
-
-var waveform = 'sawtooth';
-
-function setWaveform() {
-    let tmp = masterVolume.gain.value
-    masterVolume.gain.setValueAtTime(0, context.currentTime + .1)
-    source.type = waveform
-    masterVolume.gain.setValueAtTime(tmp, context.currentTime + .1)
-}
-
-var subOsc
-var subOscGain
-
-function prep() {
-    source = context.createOscillator()
-    source.frequency.setValueAtTime(440, context.currentTime)
-
-    subOsc = context.createOscillator()
-    subOsc.type = 'square'
-    subOscGain = context.createGain()
-
-    let som = context.createChannelMerger(2)
-
-    vf = context.createGain()
-    vf.gain.setValueAtTime(0, context.currentTime)
-
-    filter = context.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.setValueAtTime(330, context.currentTime)
-    // filter.frequency.setValueAtTime(0, context.currentTime)
-    setPeak()
-
-    masterVolume = context.createGain()
-    masterVolume.gain.setValueAtTime(0.6,context.currentTime)
-
-    source.connect(som)
-    subOsc.connect(subOscGain)
-    subOscGain.connect(som)
-
-    som.connect(vf)
-    vf.connect(filter)
-    filter.connect(masterVolume)
-    masterVolume.connect(context.destination)
-
-    setWaveform()
-
-    source.start()
-    subOsc.start()
-}
-
-var currentFreq = 0.0
-var cutoff = 1.5;
-var peak = 18
-
-function setFilter(at) {
-    filter.frequency.setValueAtTime(currentFreq * cutoff, at)
-}
-
-function setPeak(at = context.currentTime) {
-    filter.Q.setValueAtTime(peak, at)
-}
-
-var detune = 4
-var subOscWeight = 0
-
-function setDetune(at) {
-    let sf = Math.pow(2, detune / 12.0) * currentFreq
-    console.debug("Sub osc " + sf)
-    subOsc.frequency.setValueAtTime(sf, at)
-    subOscGain.gain.setValueAtTime(subOscWeight, at)
-}
-
-function noteOnAt(freq, oct, at = context.currentTime) {
-    vf.gain.cancelAndHoldAtTime(at)
-    vf.gain.setValueAtTime(.0, at)
-
-    console.debug(freq, oct)
-    currentFreq = freq * Math.pow(2, oct - 4)
-    console.debug("Note on " + currentFreq)
-
-    source.frequency.setValueAtTime(currentFreq, at)
-    setDetune(at)
-    setFilter(at)
-
-    vf.gain.linearRampToValueAtTime(1.0, at + .01) // Attack
-    vf.gain.linearRampToValueAtTime(.8, at + .5) // decay
-    vf.gain.linearRampToValueAtTime(0.0, at + 3) // sustain
-}
-
-function noteOn(freq, oct) {
-    noteOnAt(freq, oct, context.currentTime)
-
 }
 
 function shortcutKeyProc(e) {
@@ -152,19 +142,19 @@ function shortcutKeyProc(e) {
     }
 
     // sub osc
-    let now = context.currentTime
+    let now = SynthChannel.context.currentTime
     switch (e.key) {
         case '1':
             if (subOscWeight < 1.0) {
                 subOscWeight += .1
-                setDetune(now)
+                currentCh.setDetune(now)
                 document.getElementById('synth-subosc').value = subOscWeight
             }
             return
         case 'q':
             if (subOscWeight > 0.1) {
                 subOscWeight -= .1
-                setDetune(now)
+                currentCh.setDetune(now)
                 document.getElementById('synth-subosc').value = subOscWeight
             }
             return
@@ -174,14 +164,14 @@ function shortcutKeyProc(e) {
         case '2':
             if (detune < 12) {
                 detune += 1
-                setDetune(now)
+                currentCh.setDetune(now)
                 // document.getElementById('synth-detune').value = detune
             }
             return
         case 'w':
             if (detune > -12) {
                 detune -= 1
-                setDetune(now)
+                currentCh.setDetune(now)
                 // document.getElementById('synth-detune').value = detune
             }
             return
@@ -193,7 +183,7 @@ function shortcutKeyProc(e) {
             if (cutoff > 0.1) {
                 cutoff -= 0.1
                 console.debug(cutoff)
-                setFilter(now)
+                currentCh.setFilter(now)
                 document.getElementById('synth-cutoff').value = cutoff
             }
             return
@@ -201,7 +191,7 @@ function shortcutKeyProc(e) {
             if (cutoff < 4.0) {
                 cutoff += 0.1
                 console.debug(cutoff)
-                setFilter(now)
+                currentCh.setFilter(now)
                 document.getElementById('synth-cutoff').value = cutoff
             }
             return
@@ -213,7 +203,7 @@ function shortcutKeyProc(e) {
             if (peak > 3) {
                 peak -= 3
                 console.debug(peak)
-                setPeak()
+                currentCh.setPeak()
                 document.getElementById('synth-peak').value = peak
             }
             return
@@ -221,7 +211,7 @@ function shortcutKeyProc(e) {
             if (peak < 36) {
                 peak += 3
                 console.debug(peak)
-                setPeak()
+                currentCh.setPeak()
                 document.getElementById('synth-peak').value = peak
             }
             return
@@ -292,24 +282,15 @@ function shortcutKeyProc(e) {
             console.debug("Other key:" + e.key)
             return
     }
-    f = freqTable[n]
-    noteOn(f, o)
+    let f = freqTable[n]  // これはどーなのかな
+    currentCh.noteOn(f, o)
     document.querySelector('.key.note-' + n + '.octave-' + o).classList.add('noteon')
 }
 
 function keyup(e) {
-    noteOff()
-}
-
-function noteOffAt(at) {
-    vf.gain.linearRampToValueAtTime(0.0, at + .6) // release
-    var ks = document.getElementsByClassName('noteon')
-    for (let i of ks) {
-        i.classList.remove(["noteon"])
+    if (currentCh) {
+        currentCh.noteOff()
     }
-}
-function noteOff() {
-    noteOffAt(context.currentTime)
 }
 
 window.addEventListener("keydown", shortcutKeyProc, false)
@@ -331,9 +312,13 @@ function clickKeyProc(e) {
         })
         let os = parseInt(document.getElementById('play-octave').value) + o
 
-        noteOn(freqTable[ns], os)
+        currentCh.noteOn(freqTable[ns], os)
         cl.add("noteon")
     }
+}
+
+function noteOffKeyProc(e) {
+  currentCh.noteOff()
 }
 
 function waveSelectChanged(e) {
@@ -341,7 +326,7 @@ function waveSelectChanged(e) {
 
     let w = e.target.getAttribute('value')
     waveform = w
-    setWaveform()
+    currentCh.setWaveform()
 }
 
 function meterControl(proc, e) {
@@ -402,12 +387,13 @@ function addMeterEventListener(elem, afterProc) {
 document.addEventListener('DOMContentLoaded',function() {
     let prepBtn = document.querySelector('#prepare')
     let prepProp =     function () {
-        context.resume().then(function () {
+        SynthChannel.context.resume().then(function () {
             console.debug('Context resumed')
             prepBtn.removeEventListener('click', prepProp)
+            currentCh.start()
             prepBtn.style.display = 'none'
-        }).catch(function () {
-            console.warn('Fail to resume context')
+        }).catch(function (reason) {
+            console.warn('Fail to resume context' + reason)
         })
     }
     prepBtn.addEventListener('click', prepProp)
@@ -419,24 +405,24 @@ document.addEventListener('DOMContentLoaded',function() {
     )
     let kbElem = document.querySelector("#keyboard")
     kbElem.addEventListener("mousedown", clickKeyProc, false)
-    kbElem.addEventListener("mouseup", noteOff, false)
+    kbElem.addEventListener("mouseup", noteOffKeyProc, false)
 
     addMeterEventListener('synth-detune',function (v) {
         console.debug(v)
-        detune = v
-        setDetune(context.currentTime)
+        currentCh.detune = v
+        currentCh.setDetune(SynthChannel.context.currentTime)
     })
     addMeterEventListener('synth-subosc', function (v) {
-        subOscWeight = v
-        setDetune(context.currentTime)
+        currentCh.subOscWeight = v
+        currentCh.setDetune(SynthChannel.context.currentTime)
     })
     addMeterEventListener('synth-cutoff', function (v) {
         cutoff = v
-        setFilter(context.currentTime)
+        currentCh.setFilter(SynthChannel.context.currentTime)
     })
     addMeterEventListener('synth-peak', function (v) {
         peak = v
-        setPeak(context.currentTime)
+        currentCh.setPeak(SynthChannel.context.currentTime)
     })
     document.getElementById('synth-wave').addEventListener('click', function (e) {
         let tgt = e.target.closest('.psudo-drop');
@@ -478,13 +464,13 @@ document.addEventListener('DOMContentLoaded',function() {
 
         if (checked) {
             var note_index = 0
-            start_time = context.currentTime
+            start_time = SynthChannel.context.currentTime
             var last_changed_time = start_time
             playHandle = setInterval(function () {
                 // 音の予約
                 // 過去の最終note_changeから、現在時+interval*2までのnote_changeを予約
                 // 時間範囲の計算
-                let now = context.currentTime
+                let now = SynthChannel.context.currentTime
                 let range_end = now + interval / 200    // interval(mSec) * 5 / 1000
 
                 // 時間範囲内のnote_changeを列挙
@@ -514,8 +500,9 @@ document.addEventListener('DOMContentLoaded',function() {
                         let at = s_off * note_tick + start_time;
                         console.debug(note, at)
                         let freq = freqTable[note];
-                        noteOnAt(freq, oct, at)
-                        noteOffAt(at + note_tick)
+                        currentCh.noteOn(freq, oct, at)
+                        currentCh.noteOff(at + note_tick)
+                        currentCh.noteOff(at + note_tick)
                     }
                     s_off += 1
                 }
@@ -540,7 +527,7 @@ document.addEventListener('DOMContentLoaded',function() {
                     v.classList.remove('current')
                 })
                 note_index = 0
-                noteOff()
+                currentCh.noteOff()
             }
         }
     })
