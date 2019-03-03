@@ -5,10 +5,13 @@
     <title>Title</title>
     <script src="main.js"></script>
     <link rel="stylesheet" type="text/css" href="main.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/solid.css" integrity="sha384-+0VIRx+yz1WBcCTXBkVQYIBVNEFH1eP6Zknm16roZCyeNg2maWEpk/l/KsyFKs7G" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/fontawesome.css" integrity="sha384-jLuaxTTBR42U2qJ/pm4JRouHkEDHkVqH0T1nyQXn1mZ7Snycpf6Rl25VBNthU4z0" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/solid.css"
+          integrity="sha384-+0VIRx+yz1WBcCTXBkVQYIBVNEFH1eP6Zknm16roZCyeNg2maWEpk/l/KsyFKs7G" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/fontawesome.css"
+          integrity="sha384-jLuaxTTBR42U2qJ/pm4JRouHkEDHkVqH0T1nyQXn1mZ7Snycpf6Rl25VBNthU4z0" crossorigin="anonymous">
 <body>
 <div id="prepare"><button>Let's go!</button></div>
+<div id="main">
 <div>
     <fieldset>
     <legend>Wave</legend>
@@ -566,12 +569,23 @@
 </article>
 <article id="control">
     <section id="octave">
-        <label>oct.<input type="number" min="1" max="8" value="4" id="play-octave"></label>
+        <label>oct.
+            <ul>
+                <li data-octave="8">8</li>
+                <li data-octave="7">7</li>
+                <li data-octave="6">6</li>
+                <li data-octave="5">5</li>
+                <li data-octave="4" class="active">4</li>
+                <li data-octave="3">3</li>
+                <li data-octave="2">2</li>
+                <li data-octave="1">1</li>
+            </ul>
+        </label>
     </section>
     <section id="keyboard">
         <div id="blackkey">
             <div class="key disabled"></div>
-            <div class="key" class="note-c# octave-4"></div>
+            <div class="key note-c# octave-4"></div>
             <div class="key note-d# octave-4"></div>
             <div class="key disabled"></div>
             <div class="key note-f# octave-4"></div>
@@ -596,5 +610,6 @@
         </div>
     </section>
 </article>
+</div>
 </body>
 </html>

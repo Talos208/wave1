@@ -124,12 +124,19 @@ var freqTable = {
 
 window.addEventListener('load', init, false)
 var currentCh = null;
+let freeCh = new Array(0)
+let usedCh;
+usedCh = new Map();
+let octave= 4
 
 function init() {
     try {
         window.AudioContext = window.AudioContext||window.webkitAudioContext;
         SynthChannel.context = new AudioContext();
         currentCh = new SynthChannel()
+        for (let i = 0;i < 4;i++) {
+            freeCh.push(new SynthChannel())
+        }
     }
     catch (e) {
         console.error(e)
@@ -218,8 +225,8 @@ function shortcutKeyProc(e) {
     }
 
     // piano keys
-    var o = parseInt(document.getElementById('play-octave').value)
-    var n = ''
+    let o = octave;
+    let n = '';
     switch (e.key) {
         case 'z':
             n = 'b'
@@ -296,29 +303,90 @@ function keyup(e) {
 window.addEventListener("keydown", shortcutKeyProc, false)
 window.addEventListener("keyup", keyup, false)
 
+function getNoteParam(cl) {
+    var ns = null
+    var o = 0
+    cl.forEach(function (v, k, _) {
+        if (v.startsWith('note-')) {
+            console.debug(v)
+            ns = v.substr(5)
+        } else if (v.startsWith('octave-')) {
+            console.debug(v)
+            o = parseInt(v.substr(7)) - 4
+        }
+    })
+    let os = o + octave
+    return {ns, os};
+}
+
 function clickKeyProc(e) {
+    let id = null
+    e.preventDefault()
+    if (e instanceof TouchEvent) {
+        console.debug(e.changedTouches)
+        if (e.type === "touchmove") {
+            return
+        }
+        id = e.changedTouches[0].identifier
+    }
     let cl = e.target.classList;
     if (cl.contains("key")) {
-        var ns = null
-        var o = 0
-        cl.forEach(function (v,k, _) {
-            if (v.startsWith('note-')) {
-                console.debug(v)
-                ns = v.substr(5)
-            } else if (v.startsWith('octave-')) {
-                console.debug(v)
-                o = parseInt(v.substr(7)) - 4
-            }
-        })
-        let os = parseInt(document.getElementById('play-octave').value) + o
+        const __ret = getNoteParam(cl);
+        var ns = __ret.ns;
+        let os = __ret.os;
 
-        currentCh.noteOn(freqTable[ns], os)
+        let ch = freeCh.pop()
+        if (ch === undefined) {
+            ch = new SynthChannel()
+            ch.start()
+        }
+        ch.noteOn(freqTable[ns], os)
+        if (!id) {
+            id = "o" + os + ns
+        }
+        usedCh.set(id, ch)
+
         cl.add("noteon")
     }
 }
 
 function noteOffKeyProc(e) {
-  currentCh.noteOff()
+    let id = null
+    if (e instanceof TouchEvent) {
+        console.debug(e.changedTouches)
+        id = e.changedTouches[0].identifier
+    }
+    if (e.target.classList.contains("key")) {
+        const ret = getNoteParam(e.target.classList)
+        if (!id) {
+            id = "o" + ret.os + ret.ns
+        }
+    }
+    let ch = usedCh.get(id)
+    if (ch) {
+        // console.debug("noteoff" + ret.os + ret.ns)
+        ch.noteOff()
+        freeCh.unshift(ch)
+        usedCh.delete(id)
+    }
+}
+
+function octaveClickProc (e) {
+    console.debug(e)
+    let t = e.target;
+    if (e.type === 'touchmove') {
+        e.preventDefault()
+        t = document.elementFromPoint(e.changedTouches[0].pageX, e.changedTouches[0].pageY)
+    }
+
+    if (t) {
+        octave = parseInt(t.dataset['octave'])
+        let d = t.closest('ul').querySelector('.active')
+        if (d) {
+            d.classList.remove('active')
+        }
+        t.classList.add('active')
+    }
 }
 
 function waveSelectChanged(e) {
@@ -391,6 +459,9 @@ document.addEventListener('DOMContentLoaded',function() {
             console.debug('Context resumed')
             prepBtn.removeEventListener('click', prepProp)
             currentCh.start()
+            freeCh.forEach(function (v, i) {
+                v.start()
+            })
             prepBtn.style.display = 'none'
         }).catch(function (reason) {
             console.warn('Fail to resume context' + reason)
@@ -406,6 +477,15 @@ document.addEventListener('DOMContentLoaded',function() {
     let kbElem = document.querySelector("#keyboard")
     kbElem.addEventListener("mousedown", clickKeyProc, false)
     kbElem.addEventListener("mouseup", noteOffKeyProc, false)
+
+    kbElem.addEventListener("touchstart", clickKeyProc, false)
+    kbElem.addEventListener("touchmove", clickKeyProc, false)
+    kbElem.addEventListener("touchend", noteOffKeyProc, false)
+
+    let koelm = document.querySelector("#octave")
+    koelm.addEventListener("mousedown", octaveClickProc)
+    koelm.addEventListener("touchstart", octaveClickProc)
+    koelm.addEventListener("touchmove", octaveClickProc)
 
     addMeterEventListener('synth-detune',function (v) {
         console.debug(v)
@@ -432,7 +512,7 @@ document.addEventListener('DOMContentLoaded',function() {
         if (tgt.classList.contains('selecting')) {
             // 選択->決定
             let sel = pushed.dataset['index']
-            inner.style.top = -20 * sel + "px"
+            inner.style.top = -40 * sel + "px"
             inner.style.left = '0px'
             inner.style.position = 'relative'
             tgt.classList.remove('selecting')
@@ -501,7 +581,6 @@ document.addEventListener('DOMContentLoaded',function() {
                         console.debug(note, at)
                         let freq = freqTable[note];
                         currentCh.noteOn(freq, oct, at)
-                        currentCh.noteOff(at + note_tick)
                         currentCh.noteOff(at + note_tick)
                     }
                     s_off += 1

@@ -23,6 +23,8 @@ body {
     background: black;
     font-family: "dseg";
     font-weight: lighter;
+    width: 1768px;
+    margin: 0;
 }
 
 label {
@@ -54,6 +56,9 @@ div#prepare {
 div#prepare:disabled {
     display: none;
 }
+div#main {
+    padding: 12px;
+}
 
 #prepare button {
     -webkit-appearance: none;
@@ -71,21 +76,49 @@ div#prepare:disabled {
     color: white;
 }
 
+#octave {
+    font-size: 24px;
+}
+
+#octave ul {
+    padding: 10px;
+    width: 160px;
+}
+
+#octave li {
+    display: inline-block;
+    list-style: none;
+    height: 50px;
+    line-height: 50px;
+    width: 100%;
+    border: lightblue solid 1px;
+    text-align: center;
+    vertical-align: center;
+    background-color: #000044;
+    color: lightskyblue;
+}
+
+#octave li.active {
+    background-color: #000066;
+    color: lightblue;
+    font-weight: bold;
+}
+
 #keyboard {
     display: block;
     border: 1px inset aquamarine;
     background: #003;
-    width: 476px;
-    height: 170px;
-    padding-left: 20px;
-    padding-top: 5px;
-    padding-right: 20px;
+    width: 1220px;   /*(110 + 4) * 10 + (40 + 40)*/
+    height: 480px;
+    padding-left: 40px;
+    padding-top: 20px;
+    padding-right: 40px;
 }
 
 #keyboard div#blackkey {
     display: inline-block;
     position: relative;
-    left: 24px
+    left: 57px
 }
 
 #keyboard div#whitekey {
@@ -98,8 +131,8 @@ div.key {
     display: inline-block;
     border: solid 1px azure;
     background: #006;
-    width: 40px;
-    height: 80px;
+    width: 110px;
+    height: 200px;
 }
 
 div.key.disabled {
